@@ -72,8 +72,11 @@ class AurebeshApp(tk.Tk):
         self.geometry("1500x900")
         self.minsize(900, 600)
 
-        self.ab_font = ImageFont.truetype(str(FONT_DIR / "Aurebesh.otf"), FONT_SIZE)
-        self._photo: ImageTk.PhotoImage | None = None
+        self.ab_font    = ImageFont.truetype(str(FONT_DIR / "Aurebesh.otf"), FONT_SIZE)
+        self.title_font = ImageFont.truetype(str(FONT_DIR / "Audiowide.ttf"), 22)
+        self.sub_font   = ImageFont.truetype(str(FONT_DIR / "Audiowide.ttf"), 9)
+        self._photo:       ImageTk.PhotoImage | None = None
+        self._title_photo: ImageTk.PhotoImage | None = None
 
         self._build_ui()
 
@@ -99,13 +102,35 @@ class AurebeshApp(tk.Tk):
 
     def _draw_title(self) -> None:
         c = self.title_canvas
+        w = c.winfo_width() or 1500
+        h = 72
+
+        bg   = _hex_to_rgb(BG)
+        gold = _hex_to_rgb(ACCENT)
+        blue = _hex_to_rgb(BLUE_ACCENT)
+
+        title = "AUREBESH TRANSLATOR"
+        sub   = "GALACTIC BASIC STANDARD  ·  IMPERIAL TRANSLATION SERVICE"
+
+        img  = Image.new("RGB", (w, h), bg)
+        draw = ImageDraw.Draw(img)
+
+        t_asc, t_desc = self.title_font.getmetrics()
+        s_asc, s_desc = self.sub_font.getmetrics()
+        t_h = t_asc + t_desc
+        s_h = s_asc + s_desc
+        gap = 6
+        total = t_h + gap + s_h
+        y0 = (h - total) // 2
+
+        draw.text(((w - self.title_font.getlength(title)) / 2, y0),
+                  title, font=self.title_font, fill=gold)
+        draw.text(((w - self.sub_font.getlength(sub)) / 2, y0 + t_h + gap),
+                  sub, font=self.sub_font, fill=blue)
+
+        self._title_photo = ImageTk.PhotoImage(img)
         c.delete("all")
-        w = c.winfo_width() or 1000
-        c.create_text(w // 2, 24, text="✦  AUREBESH TRANSLATOR  ✦",
-                      font=("Courier New", 16, "bold"), fill=ACCENT, anchor="center")
-        c.create_text(w // 2, 50,
-                      text="GALACTIC BASIC STANDARD  ·  IMPERIAL TRANSLATION SERVICE",
-                      font=("Courier New", 8), fill=BLUE_ACCENT, anchor="center")
+        c.create_image(0, 0, anchor="nw", image=self._title_photo)
 
     def _panel(self, parent: tk.Frame, col: int) -> tk.Frame:
         outer = tk.Frame(parent, bg=BORDER)
