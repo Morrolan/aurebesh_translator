@@ -1,0 +1,19 @@
+[project]
+name = "aurebesh-translator"
+version = "1.0.0"
+description = "Star Wars Aurebesh translator GUI"
+requires-python = ">=3.10"
+dependencies = [
+    "pillow>=11.0",
+]
+
+[project.scripts]
+aurebesh-translate = "tools.translate:main"
+
+[dependency-groups]
+build = [
+    "pyinstaller>=6.0",
+]
+
+[tool.uv]
+package = false
