@@ -1,14 +1,73 @@
-# Python
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *.pyo
-
-# Virtual environment
-.venv/
-
-# PyInstaller build artefacts
-build/
+*.pyd
+*.so
+*.egg
+*.egg-info/
 dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+MANIFEST
 
-# Local Claude project settings
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── UV ────────────────────────────────────────────────────────────────────────
+.python-version
+
+# ── PyInstaller ───────────────────────────────────────────────────────────────
+*.spec.bak
+*.manifest
+
+# ── Distribution / packaging ──────────────────────────────────────────────────
+.eggs/
+*.whl
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+htmlcov/
+.pytest_cache/
+.hypothesis/
+
+# ── Type checkers ─────────────────────────────────────────────────────────────
+.mypy_cache/
+.pytype/
+.ruff_cache/
+
+# ── Editors ───────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# ── Local tooling ─────────────────────────────────────────────────────────────
 .claude/
