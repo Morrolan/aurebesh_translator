@@ -1,0 +1,236 @@
+#!/usr/bin/env python3
+"""
+Aurebesh Translator GUI
+Side-by-side English → Aurebesh translator using the Aurebesh OTF font.
+Requires: Pillow  (pip install pillow)
+Run: python tools/gui.py
+"""
+
+import re
+import sys
+import tkinter as tk
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageFont, ImageTk
+
+
+def _resource(relative: str) -> Path:
+    """Resolve a bundled resource path — works both in dev and when frozen."""
+    base = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path(__file__).parent.parent
+    return base / relative
+
+AUREBESH: dict[str, str] = {
+    "A": "Aurek", "B": "Besh",  "C": "Cresh", "D": "Dorn",
+    "E": "Enth",  "F": "Forn",  "G": "Grek",  "H": "Herf",
+    "I": "Isk",   "J": "Jenth", "K": "Krill", "L": "Leth",
+    "M": "Mern",  "N": "Nern",  "O": "Osk",   "P": "Peth",
+    "Q": "Qek",   "R": "Resh",  "S": "Senth", "T": "Trill",
+    "U": "Usk",   "V": "Vev",   "W": "Wesk",  "X": "Xesh",
+    "Y": "Yirt",  "Z": "Zerek",
+}
+
+# ── Palette ───────────────────────────────────────────────────────────────────
+BG          = "#06060f"
+PANEL_BG    = "#0c0c1e"
+INPUT_BG    = "#08081a"
+BORDER      = "#1e1e40"
+ACCENT      = "#ffd700"
+BLUE_ACCENT = "#5599ff"
+GLYPH_COLOR = "#ffd700"
+TEXT_FG     = "#cce0ff"
+MUTED       = "#404070"
+
+FONT_DIR  = _resource("fonts")
+FONT_SIZE = 52
+
+
+def _hex_to_rgb(h: str) -> tuple[int, int, int]:
+    h = h.lstrip("#")
+    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+
+class AurebeshApp(tk.Tk):
+    MARGIN = 20
+    VGAP   = 8   # extra vertical gap between lines
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.title("Aurebesh Translator")
+        self.configure(bg=BG)
+        self.geometry("1500x900")
+        self.minsize(900, 600)
+
+        self.ab_font = ImageFont.truetype(str(FONT_DIR / "Aurebesh.otf"), FONT_SIZE)
+        self._photo: ImageTk.PhotoImage | None = None
+
+        self._build_ui()
+
+    # ──────────────────────────────── UI ─────────────────────────────────────
+
+    def _build_ui(self) -> None:
+        tk.Frame(self, height=2, bg=ACCENT).pack(fill=tk.X)
+
+        self.title_canvas = tk.Canvas(self, height=72, bg=BG, highlightthickness=0)
+        self.title_canvas.pack(fill=tk.X)
+        self.title_canvas.bind("<Configure>", lambda _: self._draw_title())
+
+        tk.Frame(self, height=1, bg=ACCENT).pack(fill=tk.X)
+
+        pane = tk.Frame(self, bg=BG)
+        pane.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        pane.columnconfigure(0, weight=1, uniform="col")
+        pane.columnconfigure(1, weight=1, uniform="col")
+        pane.rowconfigure(0, weight=1)
+
+        self._build_left(pane)
+        self._build_right(pane)
+
+    def _draw_title(self) -> None:
+        c = self.title_canvas
+        c.delete("all")
+        w = c.winfo_width() or 1000
+        c.create_text(w // 2, 24, text="✦  AUREBESH TRANSLATOR  ✦",
+                      font=("Courier New", 16, "bold"), fill=ACCENT, anchor="center")
+        c.create_text(w // 2, 50,
+                      text="GALACTIC BASIC STANDARD  ·  IMPERIAL TRANSLATION SERVICE",
+                      font=("Courier New", 8), fill=BLUE_ACCENT, anchor="center")
+
+    def _panel(self, parent: tk.Frame, col: int) -> tk.Frame:
+        outer = tk.Frame(parent, bg=BORDER)
+        outer.grid(row=0, column=col, sticky="nsew",
+                   padx=(0, 5) if col == 0 else (5, 0))
+        outer.rowconfigure(0, weight=1)
+        outer.columnconfigure(0, weight=1)
+        inner = tk.Frame(outer, bg=PANEL_BG)
+        inner.grid(row=0, column=0, sticky="nsew", padx=1, pady=1)
+        inner.rowconfigure(1, weight=1)
+        inner.columnconfigure(0, weight=1)
+        return inner
+
+    def _section_label(self, parent: tk.Frame, row: int,
+                       text: str, color: str) -> None:
+        tk.Label(parent, text=text, font=("Courier New", 9, "bold"),
+                 fg=color, bg=PANEL_BG, anchor="w",
+                 ).grid(row=row, column=0, sticky="w", padx=10, pady=(10, 4))
+
+    def _build_left(self, parent: tk.Frame) -> None:
+        frame = self._panel(parent, 0)
+        self._section_label(frame, 0, "◈  GALACTIC BASIC STANDARD", BLUE_ACCENT)
+
+        self.input_box = tk.Text(
+            frame, font=("Courier New", 13), wrap=tk.WORD,
+            bg=INPUT_BG, fg=TEXT_FG, insertbackground=ACCENT,
+            relief=tk.FLAT, bd=0, padx=12, pady=10,
+            selectbackground="#1e2e6a",
+        )
+        self.input_box.grid(row=1, column=0, sticky="nsew", padx=6, pady=(0, 6))
+        self.input_box.bind("<KeyRelease>", self._on_change)
+
+        self.char_count_var = tk.StringVar(value="")
+        tk.Label(frame, textvariable=self.char_count_var,
+                 font=("Courier New", 8), fg=MUTED, bg=PANEL_BG, anchor="e",
+                 ).grid(row=2, column=0, sticky="e", padx=10, pady=(0, 6))
+
+    def _build_right(self, parent: tk.Frame) -> None:
+        frame = self._panel(parent, 1)
+        self._section_label(frame, 0, "◈  AUREBESH", ACCENT)
+
+        self.canvas = tk.Canvas(frame, bg=INPUT_BG, highlightthickness=0)
+        self.canvas.grid(row=1, column=0, sticky="nsew", padx=6, pady=(0, 4))
+        self.canvas.bind("<Configure>", self._on_canvas_resize)
+        self.canvas.bind("<MouseWheel>",
+                         lambda e: self.canvas.yview_scroll(-1 * (e.delta // 120), "units"))
+        self.canvas.bind("<Button-4>", lambda e: self.canvas.yview_scroll(-1, "units"))
+        self.canvas.bind("<Button-5>", lambda e: self.canvas.yview_scroll(1, "units"))
+
+        tk.Frame(frame, height=1, bg=BORDER).grid(row=2, column=0, sticky="ew", padx=6)
+        self.names_text = tk.Text(
+            frame, height=2, font=("Courier New", 8), wrap=tk.WORD,
+            bg=PANEL_BG, fg=MUTED, relief=tk.FLAT, bd=0,
+            padx=10, pady=5, state=tk.DISABLED,
+        )
+        self.names_text.grid(row=3, column=0, sticky="ew", padx=6, pady=(0, 6))
+
+    # ──────────────────────────────── logic ──────────────────────────────────
+
+    def _on_change(self, _event=None) -> None:
+        text = self.input_box.get("1.0", tk.END).rstrip("\n")
+        count = sum(1 for c in text.upper() if c in AUREBESH)
+        self.char_count_var.set(f"{count} letter{'s' if count != 1 else ''}")
+        self._render(text)
+
+    def _on_canvas_resize(self, _event=None) -> None:
+        text = self.input_box.get("1.0", tk.END).rstrip("\n")
+        self._render(text)
+
+    def _wrap_lines(self, text: str, max_px: int) -> list[str]:
+        """Word-wrap text to fit within max_px, respecting newlines."""
+        out: list[str] = []
+        for para in text.split("\n"):
+            if not para.strip():
+                out.append("")
+                continue
+            current = ""
+            for word in para.split(" "):
+                candidate = (current + " " + word).lstrip()
+                w = self.ab_font.getlength(candidate)
+                if w > max_px and current:
+                    out.append(current)
+                    current = word
+                else:
+                    current = candidate
+            if current:
+                out.append(current)
+        return out
+
+    def _render(self, text: str) -> None:
+        cw = self.canvas.winfo_width()
+        ch = self.canvas.winfo_height()
+        if cw < 10:
+            return
+
+        M    = self.MARGIN
+        VGAP = self.VGAP
+        bg   = _hex_to_rgb(INPUT_BG)
+        gold = _hex_to_rgb(GLYPH_COLOR)
+
+        lines = self._wrap_lines(text, cw - 2 * M)
+
+        # Measure line height from a reference string
+        ascent, descent = self.ab_font.getmetrics()
+        line_h = ascent + descent
+
+        total_h = max(M + len(lines) * (line_h + VGAP) + M, ch)
+
+        img = Image.new("RGB", (cw, total_h), bg)
+        draw = ImageDraw.Draw(img)
+
+        y = M
+        for line in lines:
+            if line:
+                draw.text((M, y), line, font=self.ab_font, fill=gold)
+            y += line_h + VGAP
+
+        self._photo = ImageTk.PhotoImage(img)
+        self.canvas.delete("all")
+        self.canvas.create_image(0, 0, anchor="nw", image=self._photo)
+        self.canvas.configure(scrollregion=(0, 0, cw, total_h))
+
+        # Update names strip
+        words = re.split(r"(\s+)", text)
+        name_parts: list[str] = []
+        for chunk in words:
+            if chunk.isspace():
+                name_parts.append("  ")
+            elif chunk:
+                name_parts.append("-".join(
+                    AUREBESH[c] for c in chunk.upper() if c in AUREBESH
+                ))
+        self.names_text.configure(state=tk.NORMAL)
+        self.names_text.delete("1.0", tk.END)
+        self.names_text.insert("1.0", "".join(name_parts).strip())
+        self.names_text.configure(state=tk.DISABLED)
+
+
+if __name__ == "__main__":
+    AurebeshApp().mainloop()
