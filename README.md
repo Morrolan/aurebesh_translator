@@ -14,11 +14,26 @@ A Star Wars-themed GUI that translates English text into Aurebesh — the writte
 
 ## Running from source
 
-**Requirements:** Python 3.10+, [Pillow](https://pillow.readthedocs.io/)
+**Requirements:** Python 3.10+, [Pillow](https://pillow.readthedocs.io/), tkinter
+
+Tkinter ships with Python on Windows and macOS. On Linux install it via your package manager first:
 
 ```bash
-pip install pillow
-python tools/gui.py
+# Debian / Ubuntu / Parrot
+sudo apt install python3-tk
+
+# Fedora / RHEL
+sudo dnf install python3-tkinter
+
+# Arch
+sudo pacman -S tk
+```
+
+Then:
+
+```bash
+uv sync
+uv run python tools/gui.py
 ```
 
 ## Pre-built binaries
