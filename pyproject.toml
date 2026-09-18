@@ -13,9 +13,16 @@ dependencies = [
 aurebesh-translate = "tools.translate:main"
 
 [dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
 build = [
     "pyinstaller>=6.0",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
 
 [tool.uv]
 package = false
