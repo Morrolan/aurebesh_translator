@@ -8,10 +8,22 @@ Run: python tools/gui.py
 
 import re
 import sys
-import tkinter as tk
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont, ImageTk
+try:
+    import tkinter as tk
+except ImportError:
+    sys.exit(
+        "tkinter is not installed.\n"
+        "  Debian/Ubuntu/Parrot: sudo apt install python3-tk\n"
+        "  Fedora/RHEL:          sudo dnf install python3-tkinter\n"
+        "  Arch:                 sudo pacman -S tk\n"
+    )
+
+try:
+    from PIL import Image, ImageDraw, ImageFont, ImageTk
+except ImportError:
+    sys.exit("Pillow is not installed. Run: uv sync  (or: pip install pillow)")
 
 
 def _resource(relative: str) -> Path:

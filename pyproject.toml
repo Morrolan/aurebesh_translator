@@ -5,6 +5,8 @@ description = "Star Wars Aurebesh translator GUI"
 requires-python = ">=3.10"
 dependencies = [
     "pillow>=11.0",
+    # tkinter is also required but is not on PyPI — install via your OS package
+    # manager: python3-tk (apt), python3-tkinter (dnf), tk (pacman)
 ]
 
 [project.scripts]
