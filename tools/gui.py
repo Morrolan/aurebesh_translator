@@ -73,8 +73,8 @@ class AurebeshApp(tk.Tk):
         self.minsize(900, 600)
 
         self.ab_font    = ImageFont.truetype(str(FONT_DIR / "Aurebesh.otf"), FONT_SIZE)
-        self.title_font = ImageFont.truetype(str(FONT_DIR / "Audiowide.ttf"), 22)
-        self.sub_font   = ImageFont.truetype(str(FONT_DIR / "Audiowide.ttf"), 9)
+        self.title_font = ImageFont.truetype(str(FONT_DIR / "Audiowide.ttf"), 36)
+        self.sub_font   = ImageFont.truetype(str(FONT_DIR / "Audiowide.ttf"), 12)
         self._photo:       ImageTk.PhotoImage | None = None
         self._title_photo: ImageTk.PhotoImage | None = None
 
@@ -85,7 +85,7 @@ class AurebeshApp(tk.Tk):
     def _build_ui(self) -> None:
         tk.Frame(self, height=2, bg=ACCENT).pack(fill=tk.X)
 
-        self.title_canvas = tk.Canvas(self, height=72, bg=BG, highlightthickness=0)
+        self.title_canvas = tk.Canvas(self, height=96, bg=BG, highlightthickness=0)
         self.title_canvas.pack(fill=tk.X)
         self.title_canvas.bind("<Configure>", lambda _: self._draw_title())
 
