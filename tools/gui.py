@@ -48,6 +48,7 @@ INPUT_BG    = "#08081a"
 BORDER      = "#1e1e40"
 ACCENT      = "#ffd700"
 BLUE_ACCENT = "#5599ff"
+FOCUS_BLUE  = "#2e5aa8"
 GLYPH_COLOR = "#ffd700"
 TEXT_FG     = "#cce0ff"
 MUTED       = "#404070"
@@ -163,6 +164,7 @@ class AurebeshApp(tk.Tk):
             bg=INPUT_BG, fg=TEXT_FG, insertbackground=ACCENT,
             relief=tk.FLAT, bd=0, padx=12, pady=10,
             selectbackground="#1e2e6a",
+            highlightthickness=1, highlightbackground=BORDER, highlightcolor=FOCUS_BLUE,
         )
         self.input_box.grid(row=1, column=0, sticky="nsew", padx=6, pady=(0, 6))
         self.input_box.bind("<KeyRelease>", self._on_change)
