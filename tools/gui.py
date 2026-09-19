@@ -54,7 +54,7 @@ TEXT_FG     = "#cce0ff"
 MUTED       = "#404070"
 
 FONT_DIR  = _resource("fonts")
-FONT_SIZE = 52
+FONT_SIZE = 40
 ICON_PATH = _resource("icons") / "icon.png"
 
 
