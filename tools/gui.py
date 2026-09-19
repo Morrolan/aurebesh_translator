@@ -25,21 +25,17 @@ try:
 except ImportError:
     sys.exit("Pillow is not installed. Run: uv sync  (or: pip install pillow)")
 
+if __package__ in (None, ""):  # run as ``python tools/gui.py`` or as the frozen entry script
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from tools.translate import AUREBESH  # noqa: E402
+
 
 def _resource(relative: str) -> Path:
     """Resolve a bundled resource path — works both in dev and when frozen."""
     base = Path(sys._MEIPASS) if getattr(sys, "frozen", False) else Path(__file__).parent.parent
     return base / relative
 
-AUREBESH: dict[str, str] = {
-    "A": "Aurek", "B": "Besh",  "C": "Cresh", "D": "Dorn",
-    "E": "Enth",  "F": "Forn",  "G": "Grek",  "H": "Herf",
-    "I": "Isk",   "J": "Jenth", "K": "Krill", "L": "Leth",
-    "M": "Mern",  "N": "Nern",  "O": "Osk",   "P": "Peth",
-    "Q": "Qek",   "R": "Resh",  "S": "Senth", "T": "Trill",
-    "U": "Usk",   "V": "Vev",   "W": "Wesk",  "X": "Xesh",
-    "Y": "Yirt",  "Z": "Zerek",
-}
 
 # ── Palette ───────────────────────────────────────────────────────────────────
 BG          = "#06060f"
@@ -61,6 +57,44 @@ ICON_PATH = _resource("icons") / "icon.png"
 def _hex_to_rgb(h: str) -> tuple[int, int, int]:
     h = h.lstrip("#")
     return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+
+
+def wrap_lines(text: str, max_px: int, measure) -> list[str]:
+    """Word-wrap text to fit within max_px, respecting newlines.
+
+    ``measure(str) -> float`` returns the rendered width of a string, e.g.
+    ``ImageFont.FreeTypeFont.getlength``. Blank paragraphs become empty lines.
+    """
+    out: list[str] = []
+    for para in text.split("\n"):
+        if not para.strip():
+            out.append("")
+            continue
+        current = ""
+        for word in para.split(" "):
+            candidate = (current + " " + word).lstrip()
+            if measure(candidate) > max_px and current:
+                out.append(current)
+                current = word
+            else:
+                current = candidate
+        if current:
+            out.append(current)
+    return out
+
+
+def glyph_names(text: str) -> str:
+    """Build the reference strip: letters as hyphenated glyph names, words two spaces apart.
+
+    Characters with no Aurebesh glyph (digits, punctuation) are skipped.
+    """
+    parts: list[str] = []
+    for chunk in re.split(r"(\s+)", text):
+        if chunk.isspace():
+            parts.append("  ")
+        elif chunk:
+            parts.append("-".join(AUREBESH[c] for c in chunk.upper() if c in AUREBESH))
+    return "".join(parts).strip()
 
 
 class AurebeshApp(tk.Tk):
@@ -167,7 +201,9 @@ class AurebeshApp(tk.Tk):
             highlightthickness=1, highlightbackground=BORDER, highlightcolor=FOCUS_BLUE,
         )
         self.input_box.grid(row=1, column=0, sticky="nsew", padx=6, pady=(0, 6))
-        self.input_box.bind("<KeyRelease>", self._on_change)
+        # <<Modified>> fires on every mutation (typing, paste, undo), unlike
+        # <KeyRelease>, which misses mouse-driven pastes.
+        self.input_box.bind("<<Modified>>", self._on_modified)
 
         self.char_count_var = tk.StringVar(value="")
         tk.Label(frame, textvariable=self.char_count_var,
@@ -196,35 +232,25 @@ class AurebeshApp(tk.Tk):
 
     # ──────────────────────────────── logic ──────────────────────────────────
 
+    def _current_text(self) -> str:
+        return self.input_box.get("1.0", tk.END).rstrip("\n")
+
+    def _on_modified(self, _event=None) -> None:
+        # Tk keeps firing <<Modified>> until the flag is cleared; clearing it
+        # fires the event once more with the flag False, which we ignore.
+        if not self.input_box.edit_modified():
+            return
+        self.input_box.edit_modified(False)
+        self._on_change()
+
     def _on_change(self, _event=None) -> None:
-        text = self.input_box.get("1.0", tk.END).rstrip("\n")
+        text = self._current_text()
         count = sum(1 for c in text.upper() if c in AUREBESH)
         self.char_count_var.set(f"{count} letter{'s' if count != 1 else ''}")
         self._render(text)
 
     def _on_canvas_resize(self, _event=None) -> None:
-        text = self.input_box.get("1.0", tk.END).rstrip("\n")
-        self._render(text)
-
-    def _wrap_lines(self, text: str, max_px: int) -> list[str]:
-        """Word-wrap text to fit within max_px, respecting newlines."""
-        out: list[str] = []
-        for para in text.split("\n"):
-            if not para.strip():
-                out.append("")
-                continue
-            current = ""
-            for word in para.split(" "):
-                candidate = (current + " " + word).lstrip()
-                w = self.ab_font.getlength(candidate)
-                if w > max_px and current:
-                    out.append(current)
-                    current = word
-                else:
-                    current = candidate
-            if current:
-                out.append(current)
-        return out
+        self._render(self._current_text())
 
     def _render(self, text: str) -> None:
         cw = self.canvas.winfo_width()
@@ -237,7 +263,7 @@ class AurebeshApp(tk.Tk):
         bg   = _hex_to_rgb(INPUT_BG)
         gold = _hex_to_rgb(GLYPH_COLOR)
 
-        lines = self._wrap_lines(text, cw - 2 * M)
+        lines = wrap_lines(text, cw - 2 * M, self.ab_font.getlength)
 
         # Measure line height from a reference string
         ascent, descent = self.ab_font.getmetrics()
@@ -260,18 +286,9 @@ class AurebeshApp(tk.Tk):
         self.canvas.configure(scrollregion=(0, 0, cw, total_h))
 
         # Update names strip
-        words = re.split(r"(\s+)", text)
-        name_parts: list[str] = []
-        for chunk in words:
-            if chunk.isspace():
-                name_parts.append("  ")
-            elif chunk:
-                name_parts.append("-".join(
-                    AUREBESH[c] for c in chunk.upper() if c in AUREBESH
-                ))
         self.names_text.configure(state=tk.NORMAL)
         self.names_text.delete("1.0", tk.END)
-        self.names_text.insert("1.0", "".join(name_parts).strip())
+        self.names_text.insert("1.0", glyph_names(text))
         self.names_text.configure(state=tk.DISABLED)
 
 

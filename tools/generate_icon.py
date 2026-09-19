@@ -21,6 +21,7 @@ SIZE = 512
 BORDER_WIDTH = 14
 CORNER_RADIUS = 90
 GLYPH_CHAR = "A"  # Aurek
+ICO_SIZES = (16, 24, 32, 48, 64, 128, 256)
 
 
 def render_base(size: int) -> Image.Image:
@@ -45,19 +46,21 @@ def render_base(size: int) -> Image.Image:
     return img
 
 
-def main() -> None:
-    OUT_DIR.mkdir(exist_ok=True)
+def write_icons(out_dir: Path = OUT_DIR) -> tuple[Path, Path]:
+    """Render and write icon.png + icon.ico into out_dir; returns their paths."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    png_path = out_dir / "icon.png"
+    ico_path = out_dir / "icon.ico"
 
     icon_png = render_base(SIZE)
-    icon_png.save(OUT_DIR / "icon.png")
+    icon_png.save(png_path)
+    icon_png.save(ico_path, sizes=[(s, s) for s in ICO_SIZES])
+    return png_path, ico_path
 
-    ico_sizes = [16, 24, 32, 48, 64, 128, 256]
-    icon_png.save(
-        OUT_DIR / "icon.ico",
-        sizes=[(s, s) for s in ico_sizes],
-    )
 
-    print(f"Wrote {OUT_DIR / 'icon.png'} and {OUT_DIR / 'icon.ico'}")
+def main() -> None:
+    png_path, ico_path = write_icons()
+    print(f"Wrote {png_path} and {ico_path}")
 
 
 if __name__ == "__main__":

@@ -2,6 +2,9 @@
 name = "aurebesh-translator"
 version = "1.0.0"
 description = "Star Wars Aurebesh translator GUI"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 requires-python = ">=3.10"
 dependencies = [
     "pillow>=11.0",
@@ -9,12 +12,10 @@ dependencies = [
     # manager: python3-tk (apt), python3-tkinter (dnf), tk (pacman)
 ]
 
-[project.scripts]
-aurebesh-translate = "tools.translate:main"
-
 [dependency-groups]
 dev = [
     "pytest>=8.0",
+    "ruff>=0.6",
 ]
 build = [
     "pyinstaller>=6.0",
@@ -26,3 +27,10 @@ testpaths = ["tests"]
 
 [tool.uv]
 package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

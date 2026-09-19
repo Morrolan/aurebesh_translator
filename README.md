@@ -47,22 +47,34 @@ Download the latest release for your platform from the
 | Windows (x86-64) | `aurebesh-translator.exe` |
 
 No installation required — both are self-contained single-file executables.
+There is no macOS binary; macOS users can run from source as above.
 
 ## Building locally
 
-```bash
-python3 -m venv .venv
-.venv/bin/pip install pyinstaller pillow      # Linux / macOS
-# .venv\Scripts\pip install pyinstaller pillow  # Windows
+Uses the same command as CI:
 
-.venv/bin/python -m PyInstaller aurebesh.spec --distpath dist --workpath build/pyinstaller
+```bash
+uv sync --group build
+uv run python -m PyInstaller aurebesh.spec --distpath dist --workpath build/pyinstaller
 ```
 
 The binary is written to `dist/`.
 
+## Development
+
+```bash
+uv sync --group dev
+uv run pytest          # tests
+uv run ruff check .    # lint
+```
+
+Both run automatically on every push and pull request (Python 3.10–3.13,
+Linux + Windows).
+
 ## CLI translator
 
-A lightweight command-line transliterator is also included:
+A lightweight command-line transliterator is also included. Letters within a
+word are separated by one space and words by two, so output round-trips:
 
 ```bash
 # English → Aurebesh names
@@ -70,8 +82,12 @@ python tools/translate.py to-ab "Hello there"
 # → Herf Enth Leth Leth Osk  Trill Herf Enth Resh Enth
 
 # Aurebesh names → English
-python tools/translate.py to-en "Herf Enth Leth Leth Osk"
-# → HELLO
+python tools/translate.py to-en "Herf Enth Leth Leth Osk  Trill Herf Enth Resh Enth"
+# → HELLO THERE
+
+# Custom separators, stdin input
+echo "Hello there" | python tools/translate.py to-ab --separator - --word-separator " / "
+# → Herf-Enth-Leth-Leth-Osk / Trill-Herf-Enth-Resh-Enth
 ```
 
 ## Fonts
@@ -85,15 +101,26 @@ default; swap the filename in `tools/gui.py` to change weight or style.
 ```
 aurebesh_translator/
 ├── tools/
-│   ├── gui.py          # GUI application (tkinter + Pillow)
-│   ├── translate.py    # CLI transliterator
-│   └── generate_icon.py # Regenerates icons/icon.{png,ico}
-├── fonts/              # Aurebesh OTF font family
-├── icons/              # App icon (window/taskbar + Windows .exe)
-├── aurebesh.spec       # PyInstaller build spec
+│   ├── __init__.py          # Package marker + __version__
+│   ├── gui.py               # GUI application (tkinter + Pillow)
+│   ├── translate.py         # CLI transliterator + shared glyph-name map
+│   └── generate_icon.py     # Regenerates icons/icon.{png,ico}
+├── tests/                   # pytest suite (CLI, GUI helpers, assets)
+├── fonts/                   # Aurebesh OTF family + Audiowide title font
+├── icons/                   # App icon (window/taskbar + Windows .exe)
+├── docs/                    # README screenshot
+├── aurebesh.spec            # PyInstaller build spec
+├── pyproject.toml           # Project metadata, deps, pytest + ruff config
+├── uv.lock                  # Locked dependency versions
+├── .python-version          # Interpreter used locally and in CI
+├── CHANGELOG.md
+├── LICENSE                  # MIT (code)
+├── THIRD_PARTY_NOTICES.md   # Font licences + trademark note
 └── .github/
+    ├── dependabot.yml       # Weekly action / dependency bumps
     └── workflows/
-        └── build.yml   # CI: builds Linux + Windows binaries on tag push
+        ├── test.yml         # CI: lint + tests on push / PR
+        └── build.yml        # CI: builds Linux + Windows binaries on tag push
 ```
 
 ## Releasing
@@ -105,3 +132,17 @@ publishes a release automatically:
 git tag v1.0.0
 git push --tags
 ```
+
+## Licence
+
+The code is released under the [MIT License](LICENSE).
+
+The bundled fonts are **not** MIT-licensed and keep their own terms — see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md):
+
+- **Aurebesh** family by Neale Davidson / [Pixel Sagas](https://www.pixelsagas.com)
+  — free for personal use; commercial use requires a licence from the author.
+- **Audiowide** by Astigmatic — [SIL Open Font License 1.1](THIRD_PARTY_NOTICES.md#audiowide-fontsaudiowidettf).
+
+*Star Wars* and *Aurebesh* are trademarks of Lucasfilm Ltd. This is an
+unofficial fan project, not affiliated with or endorsed by Lucasfilm or Disney.
