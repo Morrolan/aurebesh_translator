@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+import sys
 from pathlib import Path
 
 ROOT = Path(SPECPATH)
@@ -9,6 +10,7 @@ a = Analysis(
     binaries=[],
     datas=[
         (str(ROOT / "fonts"), "fonts"),
+        (str(ROOT / "icons"), "icons"),
     ],
     hiddenimports=["PIL._tkinter_finder"],
     hookspath=[],
@@ -36,5 +38,8 @@ exe = EXE(
     console=False,   # no terminal window
     disable_windowed_traceback=False,
     argv_emulation=False,
-    icon=None,
+    # .ico is a Windows-only resource; PyInstaller ignores `icon` on Linux,
+    # where the window's own icon (set via iconphoto in gui.py) is what
+    # shows in the taskbar.
+    icon=str(ROOT / "icons" / "icon.ico") if sys.platform.startswith("win") else None,
 )

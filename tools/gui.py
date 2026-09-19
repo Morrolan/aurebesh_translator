@@ -54,6 +54,7 @@ MUTED       = "#404070"
 
 FONT_DIR  = _resource("fonts")
 FONT_SIZE = 52
+ICON_PATH = _resource("icons") / "icon.png"
 
 
 def _hex_to_rgb(h: str) -> tuple[int, int, int]:
@@ -77,6 +78,9 @@ class AurebeshApp(tk.Tk):
         self.sub_font   = ImageFont.truetype(str(FONT_DIR / "Audiowide.ttf"), 12)
         self._photo:       ImageTk.PhotoImage | None = None
         self._title_photo: ImageTk.PhotoImage | None = None
+
+        self._icon_photo = ImageTk.PhotoImage(Image.open(ICON_PATH))
+        self.iconphoto(True, self._icon_photo)
 
         self._build_ui()
 

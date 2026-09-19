@@ -86,8 +86,10 @@ default; swap the filename in `tools/gui.py` to change weight or style.
 aurebesh_translator/
 ├── tools/
 │   ├── gui.py          # GUI application (tkinter + Pillow)
-│   └── translate.py    # CLI transliterator
+│   ├── translate.py    # CLI transliterator
+│   └── generate_icon.py # Regenerates icons/icon.{png,ico}
 ├── fonts/              # Aurebesh OTF font family
+├── icons/              # App icon (window/taskbar + Windows .exe)
 ├── aurebesh.spec       # PyInstaller build spec
 └── .github/
     └── workflows/
