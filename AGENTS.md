@@ -1,29 +1,26 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `aurebesh.bas` is the single source for 8x8 Aurebesh bitmap glyphs, expressed as `const uint_8 data[]` blocks with inline `' letter` comments; keep glyphs ordered alphabetically and separated by blank lines for readability.
-- If you add helpers, place render/preview scripts under `tools/` and any future tests under `tests/`; keep the repository root minimal.
+- `tools/gui.py` is the tkinter + Pillow GUI; it renders Aurebesh live using the bundled OTF font (`fonts/Aurebesh.otf`), not any bitmap data.
+- `tools/translate.py` is the CLI transliterator (English ↔ Aurebesh glyph names), driven by the letter→name map at the top of the file.
+- `fonts/` holds the bundled Aurebesh OTF family (regular, bold, italic, condensed variants) plus the Audiowide title font.
+- `tests/` holds pytest unit tests; `aurebesh.spec` and `.github/workflows/build.yml` define the PyInstaller packaging and CI build matrix.
+- Keep the repository root minimal; place new helpers under `tools/` and new tests under `tests/`.
 
 ## Build, Test, and Development Commands
-- No build pipeline exists; treat `aurebesh.bas` as an includeable data file. Make edits directly and sanity-check layout locally.
-- Verify each glyph has eight rows with this quick check:  
-  ```bash
-  awk '/^0x/{c++} /^};/{print "rows:",c; c=0}' aurebesh.bas
-  ```
+- Run the GUI from source: `uv sync && uv run python tools/gui.py` (requires tkinter — see README for OS install steps).
+- Run the test suite: `uv run pytest`.
 - Transliterate sample text with `python tools/translate.py to-ab "Hello there"` or reverse with `python tools/translate.py to-en "Herf Enth Leth Leth Osk"`.
-- If you create visualization helpers, document their usage here (e.g., `python tools/preview.py` to render glyphs as ASCII).
+- Build a standalone binary the way CI does: `uv run --group build python -m PyInstaller aurebesh.spec --distpath dist --workpath build/pyinstaller`.
 
 ## Coding Style & Naming Conventions
-- Keep the `const uint_8 data[] = { ... };  ' letter` pattern; one glyph per block. Use two-space indents inside braces and uppercase hexadecimal (`0x3C` not `0x3c`) for consistency.
-- Maintain trailing inline comments for glyph labels (`' a`, `' b`, etc.) and align braces/spacing to match existing blocks.
-- Favor small, self-contained additions; avoid introducing dependencies unless required for preview/testing scripts.
+- Standard PEP 8 Python: 4-space indents, type hints where practical, small self-contained functions.
+- Favor small, self-contained additions; avoid introducing dependencies unless required for the GUI, packaging, or tests.
 
 ## Testing Guidelines
-- Manual verification is expected today. If adding scripts, include a fast check that flags non-8-row glyphs and malformed hex.
-- Name any new tests after the glyph or feature they cover (e.g., `test_aurek_rendering`). Store fixtures next to the tests that consume them.
-- When modifying glyph shapes, provide a brief note or screenshot in the PR description showing before/after rendering from your preview tool.
+- Add pytest tests under `tests/`, named after the feature they cover (e.g. `test_translate.py`).
+- When changing rendering (fonts, layout, colours) in `tools/gui.py`, include a before/after screenshot in the PR description since there's no automated visual check.
 
 ## Commit & Pull Request Guidelines
-- Use imperative, scope-focused commit subjects (e.g., `Add resh glyph bitmap`); keep commits atomic so reviewers can isolate changes.
-- PRs should summarize the intent, list affected glyphs, mention how you validated the data, and include artifacts (render output or the `awk` check result).
-- Link related issues or tickets when available; request review if you adjust glyph shapes, ordering, or introduce new helper scripts.
+- Use imperative, scope-focused commit subjects (e.g. `Fix PyInstaller PIL hidden import`); keep commits atomic so reviewers can isolate changes.
+- PRs should summarize the intent, mention how the change was validated (tests run, GUI screenshot, CLI output), and link related issues when available.

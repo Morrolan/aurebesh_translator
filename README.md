@@ -88,7 +88,6 @@ aurebesh_translator/
 │   ├── gui.py          # GUI application (tkinter + Pillow)
 │   └── translate.py    # CLI transliterator
 ├── fonts/              # Aurebesh OTF font family
-├── aurebesh.bas        # Original 8×8 bitmap glyph data (reference)
 ├── aurebesh.spec       # PyInstaller build spec
 └── .github/
     └── workflows/
