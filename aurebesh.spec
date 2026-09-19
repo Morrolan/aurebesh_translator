@@ -10,7 +10,7 @@ a = Analysis(
     datas=[
         (str(ROOT / "fonts"), "fonts"),
     ],
-    hiddenimports=[],
+    hiddenimports=["PIL._tkinter_finder"],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
